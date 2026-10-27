@@ -1,0 +1,1736 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SimuCorreo Mágico: Ciber-Seguridad y Vida Real</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                        display: ['"Outfit"', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#fdf2f8',
+                            100: '#fce7f3',
+                            200: '#fbcfe8',
+                            300: '#f472b6',
+                            500: '#ec4899',
+                            600: '#db2777',
+                            700: '#be185d',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            overflow-x: hidden;
+            user-select: none;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        #animated-bg {
+            background: linear-gradient(135deg, #ffd1dc, #d5e8ff, #fde2b9, #e0d4fd);
+            background-size: 300% 300%;
+            animation: gradientShift 22s ease infinite;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -3;
+        }
+
+        .bubble {
+            position: absolute;
+            bottom: -100px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.8), rgba(255,255,255,0.1));
+            box-shadow: 0 4px 15px rgba(255,255,255,0.4);
+            animation: floatBubble linear infinite;
+            z-index: -2;
+            pointer-events: none;
+        }
+
+        @keyframes floatBubble {
+            0% { transform: translateY(0) scale(0.8) rotate(0deg); opacity: 0; }
+            15% { opacity: 0.35; }
+            85% { opacity: 0.35; }
+            100% { transform: translateY(-115vh) scale(1.15) rotate(360deg); opacity: 0; }
+        }
+
+        /* Custom Scrollbars */
+        .custom-scrollbar::-webkit-scrollbar { width: 7px; height: 7px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: rgba(240, 240, 245, 0.4); border-radius: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(219, 39, 119, 0.35); border-radius: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(219, 39, 119, 0.65); }
+
+        .unread-row {
+            font-weight: 700;
+            background: linear-gradient(to right, #ffffff, #fff5f8);
+            border-left: 4px solid #ec4899 !important;
+        }
+
+        .read-row {
+            background: rgba(255, 255, 255, 0.7);
+            color: #4b5563;
+        }
+
+        .sidebar-item[data-active='true'] {
+            background: linear-gradient(90deg, #fce7f3 0%, #fbcfe8 100%);
+            color: #9d174d;
+            font-weight: 700;
+            box-shadow: 0 2px 8px rgba(244, 114, 182, 0.2);
+        }
+
+        .security-badge-pulse {
+            animation: pulseShield 2s infinite ease-in-out;
+        }
+
+        @keyframes pulseShield {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.08); }
+        }
+
+        .shake-animation {
+            animation: shake 0.5s ease-in-out;
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-8px); }
+            40%, 80% { transform: translateX(8px); }
+        }
+    </style>
+</head>
+<body class="text-slate-800 antialiased min-h-screen flex flex-col">
+
+    <!-- Fondo dinámico y burbujas -->
+    <div id="animated-bg"></div>
+    <div id="bubbles-container" class="fixed inset-0 overflow-hidden pointer-events-none"></div>
+
+    <!-- Barra de Navegador Educativa -->
+    <header id="fake-browser-bar" class="fixed top-0 left-0 right-0 h-12 bg-white/90 backdrop-blur-md border-b border-pink-200/60 shadow-sm z-50 flex items-center px-4 justify-between">
+        <div class="flex items-center space-x-2">
+            <div class="flex space-x-1.5 mr-2">
+                <span class="w-3 h-3 bg-rose-400 rounded-full inline-block cursor-pointer hover:opacity-80 transition" title="Cerrar ventana simulada" onclick="simulateWindowAction('Cerrar')"></span>
+                <span class="w-3 h-3 bg-amber-400 rounded-full inline-block cursor-pointer hover:opacity-80 transition" title="Minimizar" onclick="simulateWindowAction('Minimizar')"></span>
+                <span class="w-3 h-3 bg-emerald-400 rounded-full inline-block cursor-pointer hover:opacity-80 transition" title="Maximizar" onclick="simulateWindowAction('Maximizar')"></span>
+            </div>
+            <div class="flex space-x-1 text-slate-500 text-xs">
+                <button class="p-1.5 rounded hover:bg-pink-100 hover:text-pink-600 transition" onclick="goHomeView()"><i class="fas fa-home"></i></button>
+                <button class="p-1.5 rounded hover:bg-pink-100 hover:text-pink-600 transition" onclick="refreshMailbox()"><i class="fas fa-sync-alt" id="refresh-icon"></i></button>
+            </div>
+        </div>
+
+        <div class="flex-grow max-w-xl mx-4">
+            <div class="flex items-center bg-pink-50/80 border border-pink-200 rounded-full px-3 py-1 text-xs text-slate-600">
+                <i class="fas fa-lock text-emerald-500 mr-2 text-[10px]"></i>
+                <span class="text-emerald-700 font-semibold mr-1">https://</span>
+                <span id="fake-address-bar" class="font-mono text-slate-700 truncate">simucorreo.educacion.segura/inicio</span>
+            </div>
+        </div>
+
+        <!-- Puntuación de Ciber-Seguridad / Detective cibernético -->
+        <div class="flex items-center space-x-3">
+            <div id="cyber-badge-container" class="hidden sm:flex items-center bg-gradient-to-r from-pink-500 to-rose-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow-sm cursor-pointer" onclick="openCyberShieldModal()" title="Ver tu estado de Ciber-Detective">
+                <i class="fas fa-shield-halved mr-1.5 text-amber-200"></i>
+                <span>Nivel Ciber-Guardián: <span id="cyber-score-text">100</span> pts</span>
+            </div>
+
+            <!-- Botón Modo Maestro / Simulador -->
+            <button onclick="toggleTeacherPanel()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs px-2.5 py-1 rounded-md font-semibold flex items-center transition shadow-sm" title="Panel para que el docente envíe correos sorpresa">
+                <i class="fas fa-chalkboard-teacher mr-1"></i>
+                <span class="hidden md:inline">Panel Docente</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Contenedor de Alertas Toast Notificaciones Flotantes -->
+    <div id="notification-area" class="fixed top-14 right-4 z-50 space-y-2 pointer-events-none w-80"></div>
+
+    <!-- MODAL: Alerta de Ciberseguridad (Phishing / Trampa detectada) -->
+    <div id="security-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-lg w-full p-6 md:p-8 text-center shadow-2xl border-4 border-rose-500 transform transition-all animate-bounce-once">
+            <div class="w-20 h-20 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-4 security-badge-pulse text-rose-600 text-4xl">
+                <i class="fas fa-triangle-exclamation"></i>
+            </div>
+            <h3 class="text-2xl font-display font-extrabold text-rose-700 mb-2" id="security-modal-title">¡ALERTA DE CIBERSEGURIDAD!</h3>
+            <p id="security-modal-text" class="text-slate-600 text-sm md:text-base mb-6 leading-relaxed">
+                Este enlace o archivo es muy peligroso.
+            </p>
+            <div class="bg-rose-50 rounded-xl p-4 text-left mb-6 border border-rose-200">
+                <div class="font-bold text-rose-800 text-xs uppercase tracking-wide flex items-center mb-1">
+                    <i class="fas fa-lightbulb text-amber-500 mr-1.5"></i> Lección para la vida real:
+                </div>
+                <div id="security-modal-lesson" class="text-xs text-rose-950 leading-relaxed font-medium"></div>
+            </div>
+            <div class="flex justify-center space-x-3">
+                <button id="close-security-modal" class="bg-rose-600 hover:bg-rose-700 text-white font-bold py-2.5 px-6 rounded-xl transition shadow-lg text-sm">
+                    <i class="fas fa-check mr-1.5"></i> Entendido, aprendí la lección
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Insignias y Puntos Ciber-Guardián -->
+    <div id="shield-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 text-center shadow-2xl border border-pink-200">
+            <div class="w-16 h-16 bg-gradient-to-tr from-amber-400 to-rose-400 text-white rounded-2xl flex items-center justify-center mx-auto mb-3 text-3xl shadow-md">
+                <i class="fas fa-award"></i>
+            </div>
+            <h3 class="text-xl font-display font-bold text-slate-800">Tu Progreso de Seguridad Digital</h3>
+            <p class="text-xs text-slate-500 mb-4">Ganas puntos al marcar spam y reportar amenazas antes de caer en ellas.</p>
+            
+            <div class="bg-pink-50 p-4 rounded-2xl mb-4 text-left space-y-2 text-xs">
+                <div class="flex justify-between items-center py-1 border-b border-pink-100">
+                    <span class="text-slate-600 font-semibold"><i class="fas fa-shield text-pink-500 mr-1.5"></i> Puntos de Ciberseguridad:</span>
+                    <span class="font-bold text-rose-600 text-sm" id="modal-score-display">100 pts</span>
+                </div>
+                <div class="flex justify-between items-center py-1 border-b border-pink-100">
+                    <span class="text-slate-600 font-semibold"><i class="fas fa-bug text-emerald-500 mr-1.5"></i> Trampas Neutralizadas:</span>
+                    <span class="font-bold text-emerald-600" id="modal-threats-reported">0</span>
+                </div>
+                <div class="flex justify-between items-center py-1">
+                    <span class="text-slate-600 font-semibold"><i class="fas fa-heart text-rose-500 mr-1.5"></i> Mensajes a Mamá respondidos:</span>
+                    <span class="font-bold text-rose-600" id="modal-mama-replies">0</span>
+                </div>
+            </div>
+
+            <div class="mb-5">
+                <h4 class="text-xs font-bold text-slate-700 uppercase mb-2 text-left">Medallas Obtenidas:</h4>
+                <div class="grid grid-cols-3 gap-2" id="badges-container">
+                    <div class="p-2.5 rounded-xl border border-dashed border-slate-200 bg-slate-50 flex flex-col items-center text-center">
+                        <i class="fas fa-user-astronaut text-xl text-pink-500 mb-1"></i>
+                        <span class="text-[10px] font-bold text-slate-700">Primer Viajero</span>
+                    </div>
+                    <div class="p-2.5 rounded-xl border border-dashed border-slate-200 bg-slate-50 flex flex-col items-center text-center opacity-40" id="badge-spam-hunter">
+                        <i class="fas fa-radar text-xl text-rose-500 mb-1"></i>
+                        <span class="text-[10px] font-bold text-slate-700">Caza-Spam</span>
+                    </div>
+                    <div class="p-2.5 rounded-xl border border-dashed border-slate-200 bg-slate-50 flex flex-col items-center text-center opacity-40" id="badge-family-hero">
+                        <i class="fas fa-comments text-xl text-amber-500 mb-1"></i>
+                        <span class="text-[10px] font-bold text-slate-700">Hijo Ejemplar</span>
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="document.getElementById('shield-modal').classList.add('hidden')" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-semibold py-2 rounded-xl text-sm transition">
+                Cerrar
+            </button>
+        </div>
+    </div>
+
+    <!-- PANEL FLOTANTE DEL DOCENTE (Para enviar situaciones en clase en vivo) -->
+    <div id="teacher-panel" class="fixed bottom-4 right-4 z-40 bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border-2 border-indigo-400 p-4 max-w-sm w-full hidden transition-all">
+        <div class="flex justify-between items-center mb-3 pb-2 border-b border-indigo-100">
+            <div class="flex items-center text-indigo-700 font-bold text-sm">
+                <i class="fas fa-graduation-cap text-base mr-2"></i> Control del Docente
+            </div>
+            <button onclick="toggleTeacherPanel()" class="text-slate-400 hover:text-slate-600 text-xs">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <p class="text-[11px] text-slate-500 mb-3">Envía en tiempo real un correo simulado a la pantalla del estudiante para practicar en clase:</p>
+        <div class="grid grid-cols-2 gap-2 text-xs">
+            <button onclick="teacherInjectEmail('mama_tarea')" class="p-2 bg-pink-50 hover:bg-pink-100 text-pink-700 font-medium rounded-lg text-left border border-pink-200 transition">
+                👩 Mensaje de Mamá (Cena)
+            </button>
+            <button onclick="teacherInjectEmail('profesor')" class="p-2 bg-blue-50 hover:bg-blue-100 text-blue-700 font-medium rounded-lg text-left border border-blue-200 transition">
+                👨‍🏫 Tarea del Colegio
+            </button>
+            <button onclick="teacherInjectEmail('robux')" class="p-2 bg-amber-50 hover:bg-amber-100 text-amber-800 font-medium rounded-lg text-left border border-amber-200 transition">
+                🎮 Estafa Videojuegos
+            </button>
+            <button onclick="teacherInjectEmail('desconocido')" class="p-2 bg-purple-50 hover:bg-purple-100 text-purple-800 font-medium rounded-lg text-left border border-purple-200 transition">
+                👀 Desconocido Redes
+            </button>
+            <button onclick="teacherInjectEmail('phishing_banco')" class="p-2 bg-rose-50 hover:bg-rose-100 text-rose-800 font-medium rounded-lg text-left border border-rose-200 transition">
+                ⚠️ Bloqueo Urgente Falso
+            </button>
+            <button onclick="teacherInjectEmail('amigo_fiesta')" class="p-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-medium rounded-lg text-left border border-emerald-200 transition">
+                🎂 Invitación de Amigo
+            </button>
+        </div>
+    </div>
+
+    <!-- CONTENEDOR PRINCIPAL -->
+    <div id="app-container" class="relative flex-1 flex flex-col items-center pt-14 pb-4 px-3 sm:px-6">
+
+        <!-- ============================================== -->
+        <!-- SECCIÓN 1: PANTALLAS DE AUTENTICACIÓN / CREAR CUENTA -->
+        <!-- ============================================== -->
+        <div id="auth-section" class="w-full max-w-md my-auto py-6">
+            
+            <!-- TARJETA CREAR CUENTA (Por defecto primero para que los alumnos aprendan a crearlo) -->
+            <div id="signup-form-container" class="bg-white/85 backdrop-blur-md p-6 sm:p-8 rounded-3xl shadow-xl border border-pink-200 transition-all">
+                <div class="text-center mb-6">
+                    <div class="inline-flex p-3 bg-gradient-to-tr from-pink-400 to-rose-400 rounded-2xl text-white shadow-md mb-2">
+                        <i class="fas fa-envelope-open-text text-2xl"></i>
+                    </div>
+                    <h2 class="text-2xl sm:text-3xl font-display font-extrabold text-pink-700">Crea tu Correo Mágico</h2>
+                    <p class="text-slate-500 text-xs sm:text-sm mt-1">Aprende a elegir un nombre seguro y tu contraseña secreta</p>
+                </div>
+
+                <form id="signup-form" class="space-y-4">
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Nombre</label>
+                            <input type="text" id="signup-firstname" required placeholder="Ej: Lucas" class="w-full px-3.5 py-2 text-sm bg-pink-50/50 border border-pink-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-400">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Apellido</label>
+                            <input type="text" id="signup-lastname" required placeholder="Ej: Gómez" class="w-full px-3.5 py-2 text-sm bg-pink-50/50 border border-pink-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-400">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Elige tu nombre de usuario</label>
+                        <div class="flex">
+                            <input type="text" id="signup-simuemail-prefix" required placeholder="lucas.gomez" pattern="[a-zA-Z0-9._-]+" title="Solo letras, números y puntos" class="w-full px-3.5 py-2 text-sm bg-pink-50/50 border border-pink-200 rounded-l-xl focus:outline-none focus:ring-2 focus:ring-pink-400">
+                            <span class="inline-flex items-center px-3 text-xs font-semibold text-pink-700 bg-pink-100 border border-l-0 border-pink-200 rounded-r-xl">@simucorreo.com</span>
+                        </div>
+                        <p class="text-[10px] text-slate-400 mt-1">💡 Consejo: No pongas tu número de teléfono ni datos privados.</p>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Contraseña secreta</label>
+                        <div class="relative">
+                            <input type="password" id="signup-password" required minlength="6" placeholder="Mínimo 6 caracteres" class="w-full px-3.5 py-2 text-sm bg-pink-50/50 border border-pink-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-400 pr-10">
+                            <button type="button" onclick="togglePasswordVisibility('signup-password')" class="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 text-xs">
+                                <i class="fas fa-eye" id="signup-password-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Test rápido de contraseña -->
+                    <div class="p-3 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-900">
+                        <div class="font-bold flex items-center mb-1">
+                            <i class="fas fa-key text-amber-500 mr-1.5"></i> Regla de Oro:
+                        </div>
+                        <span>Tu contraseña nunca se comparte con compañeros ni desconocidos, solo con papá o mamá.</span>
+                    </div>
+
+                    <button type="submit" class="w-full py-3 bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white font-bold rounded-xl shadow-lg shadow-pink-500/25 transition transform active:scale-95 text-sm flex items-center justify-center">
+                        <i class="fas fa-rocket mr-2"></i> ¡Crear mi Cuenta y Explorar!
+                    </button>
+                </form>
+
+                <div class="text-center mt-5 pt-4 border-t border-pink-100">
+                    <button type="button" id="go-to-login" class="text-xs text-pink-600 font-semibold hover:underline">
+                        ¿Ya habías creado una cuenta de prueba? Inicia sesión aquí
+                    </button>
+                </div>
+            </div>
+
+            <!-- TARJETA LOGIN -->
+            <div id="login-form-container" class="hidden bg-white/85 backdrop-blur-md p-6 sm:p-8 rounded-3xl shadow-xl border border-pink-200 transition-all">
+                <div class="text-center mb-6">
+                    <div class="inline-flex p-3 bg-gradient-to-tr from-pink-500 to-rose-500 rounded-2xl text-white shadow-md mb-2">
+                        <i class="fas fa-user-lock text-2xl"></i>
+                    </div>
+                    <h2 class="text-2xl font-display font-extrabold text-pink-700">Entrar a SimuCorreo</h2>
+                    <p class="text-slate-500 text-xs mt-1">Ingresa con los datos de tu correo simulado</p>
+                </div>
+
+                <form id="login-form" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Tu Correo Simulado</label>
+                        <input type="email" id="login-email" required placeholder="alumno@simucorreo.com" class="w-full px-3.5 py-2 text-sm bg-pink-50/50 border border-pink-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-400">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Tu Contraseña</label>
+                        <input type="password" id="login-password" required placeholder="••••••••" class="w-full px-3.5 py-2 text-sm bg-pink-50/50 border border-pink-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-400">
+                    </div>
+                    <button type="submit" class="w-full py-3 bg-pink-500 hover:bg-pink-600 text-white font-bold rounded-xl shadow-lg shadow-pink-500/25 transition transform active:scale-95 text-sm">
+                        Entrar a mi Bandeja
+                    </button>
+                </form>
+
+                <div class="text-center mt-5 pt-4 border-t border-pink-100">
+                    <button type="button" id="go-to-signup" class="text-xs text-pink-600 font-semibold hover:underline">
+                        ¿No tienes cuenta? Crea una nueva aquí
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ============================================== -->
+        <!-- SECCIÓN 2: CLIENTE DE CORREO ELECTRÓNICO COMPLETO -->
+        <!-- ============================================== -->
+        <div id="email-client-section" class="hidden w-full max-w-6xl flex-1 flex flex-col bg-white/90 backdrop-blur-md shadow-2xl rounded-3xl border border-pink-200/80 overflow-hidden my-auto h-[86vh]">
+            
+            <!-- Barra Superior del Cliente de Correo -->
+            <div class="bg-gradient-to-r from-pink-500 via-rose-500 to-pink-600 text-white px-5 py-3 flex justify-between items-center shadow-md">
+                <div class="flex items-center space-x-3">
+                    <div class="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center text-amber-200 text-lg">
+                        <i class="fas fa-shield-cat"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-base font-bold font-display leading-tight flex items-center">
+                            SimuCorreo Seguro
+                            <span class="ml-2 text-[10px] bg-white/20 font-sans px-2 py-0.5 rounded-full uppercase tracking-wider">Entorno de Aprendizaje</span>
+                        </h1>
+                        <p class="text-[11px] text-pink-100" id="user-display-email">cargando...</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center space-x-2">
+                    <!-- Buscador de correos -->
+                    <div class="relative hidden sm:block">
+                        <input type="text" id="search-input" placeholder="Buscar correos..." class="pl-8 pr-3 py-1.5 text-xs rounded-full bg-white/20 text-white placeholder-pink-100 focus:outline-none focus:bg-white focus:text-slate-700 w-48 transition-all">
+                        <i class="fas fa-search absolute left-3 top-2 text-xs text-pink-100 pointer-events-none"></i>
+                    </div>
+
+                    <button onclick="logout()" class="bg-white/20 hover:bg-rose-700 text-white text-xs px-3 py-1.5 rounded-xl font-semibold transition flex items-center">
+                        <i class="fas fa-right-from-bracket sm:mr-1.5"></i>
+                        <span class="hidden sm:inline">Cerrar Sesión</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Cuerpo Principal: Barra Lateral + Área de Contenido -->
+            <div class="flex flex-1 overflow-hidden">
+                
+                <!-- Barra Lateral de Carpetas -->
+                <aside class="w-20 sm:w-56 md:w-64 bg-pink-50/70 border-r border-pink-200/60 p-3 flex flex-col justify-between overflow-y-auto custom-scrollbar">
+                    <div class="space-y-2">
+                        <!-- Botón Redactar -->
+                        <button id="compose-btn" class="w-full bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white font-bold py-3 px-3 rounded-2xl flex items-center justify-center sm:justify-start shadow-md shadow-pink-500/20 transition-all transform active:scale-95 mb-4">
+                            <i class="fas fa-pen-fancy text-base sm:mr-2.5"></i>
+                            <span class="hidden sm:inline text-sm">Nuevo Mensaje</span>
+                        </button>
+
+                        <!-- Carpetas -->
+                        <nav class="space-y-1">
+                            <button id="inbox-btn" data-folder="inbox" data-active="true" class="sidebar-item w-full py-2.5 px-3 rounded-xl hover:bg-pink-100/70 text-slate-700 flex items-center justify-between transition text-xs sm:text-sm">
+                                <div class="flex items-center">
+                                    <i class="fas fa-inbox text-pink-500 w-5 sm:mr-2"></i>
+                                    <span class="hidden sm:inline">Bandeja de Entrada</span>
+                                </div>
+                                <span id="inbox-count" class="bg-pink-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">3</span>
+                            </button>
+
+                            <button id="spam-btn" data-folder="spam" class="sidebar-item w-full py-2.5 px-3 rounded-xl hover:bg-pink-100/70 text-slate-700 flex items-center justify-between transition text-xs sm:text-sm">
+                                <div class="flex items-center">
+                                    <i class="fas fa-radiation text-amber-500 w-5 sm:mr-2"></i>
+                                    <span class="hidden sm:inline">Spam / No Deseado</span>
+                                </div>
+                                <span id="spam-count" class="bg-amber-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">2</span>
+                            </button>
+
+                            <button id="sent-btn" data-folder="sent" class="sidebar-item w-full py-2.5 px-3 rounded-xl hover:bg-pink-100/70 text-slate-700 flex items-center justify-between transition text-xs sm:text-sm">
+                                <div class="flex items-center">
+                                    <i class="fas fa-paper-plane text-blue-500 w-5 sm:mr-2"></i>
+                                    <span class="hidden sm:inline">Enviados</span>
+                                </div>
+                                <span id="sent-count" class="text-slate-400 text-[10px]">0</span>
+                            </button>
+
+                            <button id="trash-btn" data-folder="trash" class="sidebar-item w-full py-2.5 px-3 rounded-xl hover:bg-pink-100/70 text-slate-700 flex items-center justify-between transition text-xs sm:text-sm">
+                                <div class="flex items-center">
+                                    <i class="fas fa-trash-can text-slate-400 w-5 sm:mr-2"></i>
+                                    <span class="hidden sm:inline">Papelera</span>
+                                </div>
+                                <span id="trash-count" class="text-slate-400 text-[10px]">0</span>
+                            </button>
+                        </nav>
+                    </div>
+
+                    <!-- Cuadro Informativo de Ayuda para Estudiantes -->
+                    <div class="hidden sm:block bg-gradient-to-br from-pink-100 to-rose-100 border border-pink-200 rounded-2xl p-3 text-xs">
+                        <div class="flex items-center text-pink-800 font-bold mb-1.5">
+                            <i class="fas fa-shield-heart text-rose-500 mr-1.5"></i> Reglas de Ciberseguridad
+                        </div>
+                        <ul class="text-[11px] text-pink-950 space-y-1.5 leading-snug">
+                            <li class="flex items-start">
+                                <span class="text-rose-500 mr-1 font-bold">1.</span> Los regalos "gratis" suelen ser estafas.
+                            </li>
+                            <li class="flex items-start">
+                                <span class="text-rose-500 mr-1 font-bold">2.</span> Nunca abras archivos terminados en .exe o .bat.
+                            </li>
+                            <li class="flex items-start">
+                                <span class="text-rose-500 mr-1 font-bold">3.</span> Mamá y tus profesores son contactos seguros.
+                            </li>
+                        </ul>
+                    </div>
+                </aside>
+
+                <!-- Área Central de Vistas -->
+                <main class="flex-1 flex flex-col bg-white overflow-hidden">
+                    
+                    <!-- VISTA 1: LISTADO DE CORREOS -->
+                    <div id="email-list-view" class="flex-1 flex flex-col overflow-hidden">
+                        <!-- Cabecera de la lista -->
+                        <div class="p-4 border-b border-pink-100 flex justify-between items-center bg-pink-50/30">
+                            <div>
+                                <h2 class="text-lg font-bold font-display text-slate-800 flex items-center" id="current-folder-title">
+                                    Bandeja de Entrada
+                                </h2>
+                                <p class="text-xs text-slate-500" id="current-folder-desc">Mensajes recibidos de familiares, amigos y la escuela.</p>
+                            </div>
+
+                            <div class="flex items-center space-x-2">
+                                <button onclick="markAllAsRead()" class="text-xs text-pink-600 hover:text-pink-800 font-semibold px-2 py-1 rounded-lg hover:bg-pink-100 transition" title="Marcar todo como leído">
+                                    <i class="fas fa-check-double mr-1"></i> Leer todo
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Lista de Correos con Scroll -->
+                        <div id="emails-container" class="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-2">
+                            <!-- Los correos se renderizan aquí dinámicamente -->
+                        </div>
+                    </div>
+
+                    <!-- VISTA 2: LECTURA DE UN CORREO -->
+                    <div id="email-read-view" class="hidden flex-1 flex flex-col overflow-hidden bg-slate-50/50">
+                        <!-- Barra de herramientas superior -->
+                        <div class="px-5 py-3 border-b border-slate-200 bg-white flex justify-between items-center">
+                            <button id="btn-back-to-list" class="text-xs font-semibold text-pink-600 hover:text-pink-700 bg-pink-50 hover:bg-pink-100 px-3 py-1.5 rounded-xl transition flex items-center">
+                                <i class="fas fa-arrow-left mr-1.5"></i> Volver a la lista
+                            </button>
+
+                            <div class="flex items-center space-x-2" id="read-view-actions">
+                                <!-- Botones de acción dinámicos -->
+                            </div>
+                        </div>
+
+                        <!-- Banner de Advertencia Inteligente (si es sospechoso o spam) -->
+                        <div id="security-warning-banner" class="m-4 mb-0 bg-rose-50 border-2 border-rose-300 rounded-2xl p-4 hidden">
+                            <div class="flex items-start">
+                                <div class="w-10 h-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center text-xl mr-3 flex-shrink-0">
+                                    <i class="fas fa-shield-virus"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <h4 class="text-sm font-bold text-rose-800 flex items-center">
+                                        ¡Atención! Este correo presenta señales sospechosas
+                                    </h4>
+                                    <p id="security-warning-text" class="text-xs text-rose-700 mt-1 leading-relaxed">
+                                        Observa con cuidado quién te escribe y no des clic en nada sin pensar.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Banner de Contacto Confiable (Mamá / Profesor) -->
+                        <div id="trusted-contact-banner" class="m-4 mb-0 bg-emerald-50 border border-emerald-300 rounded-2xl p-3 hidden">
+                            <div class="flex items-center text-xs text-emerald-800 font-medium">
+                                <i class="fas fa-circle-check text-emerald-500 text-base mr-2"></i>
+                                <span><strong>Contacto Seguro Verificado:</strong> Esta dirección pertenece a tu círculo familiar o escolar confiable.</span>
+                            </div>
+                        </div>
+
+                        <!-- Contenido del Correo -->
+                        <div class="flex-1 overflow-y-auto custom-scrollbar p-6">
+                            <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200/80 max-w-4xl mx-auto">
+                                <div class="flex justify-between items-start border-b border-slate-100 pb-4 mb-4">
+                                    <div class="flex items-start space-x-3">
+                                        <div id="avatar-container" class="w-11 h-11 rounded-full flex items-center justify-center font-bold text-white shadow-sm flex-shrink-0">
+                                            M
+                                        </div>
+                                        <div>
+                                            <h3 class="text-lg sm:text-xl font-bold font-display text-slate-800" id="read-subject">Asunto</h3>
+                                            <div class="text-xs text-slate-500 mt-0.5">
+                                                De: <span class="font-bold text-slate-700" id="read-sender-name">Remitente</span> 
+                                                &lt;<span id="read-sender-email" class="font-mono text-slate-600">email@simu</span>&gt;
+                                            </div>
+                                            <div class="text-[11px] text-slate-400 mt-0.5">
+                                                Para: <span id="read-recipient">Tú</span> • <span id="read-date">Hoy</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Cuerpo del mensaje -->
+                                <div id="read-body" class="text-sm text-slate-700 leading-relaxed space-y-3 py-2">
+                                    <!-- Texto del correo -->
+                                </div>
+
+                                <!-- Sección de Archivos Adjuntos Simulados -->
+                                <div id="read-attachments" class="mt-6 pt-4 border-t border-slate-100 hidden">
+                                    <div class="text-xs font-bold text-slate-600 mb-2 flex items-center">
+                                        <i class="fas fa-paperclip mr-1.5 text-pink-500"></i> Archivos adjuntos:
+                                    </div>
+                                    <div id="attachments-list" class="flex flex-wrap gap-2"></div>
+                                </div>
+
+                                <!-- Cuadro Especial: Respuestas Rápidas para Mamá o Profesor -->
+                                <div id="quick-reply-box" class="mt-8 pt-4 border-t border-pink-100 hidden">
+                                    <h4 class="text-xs font-bold text-pink-700 mb-2 flex items-center">
+                                        <i class="fas fa-reply-all mr-1.5"></i> Respuestas sugeridas:
+                                    </h4>
+                                    <div id="quick-reply-options" class="flex flex-wrap gap-2">
+                                        <!-- Botones dinámicos de respuesta rápida -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- VISTA 3: REDACTAR CORREO -->
+                    <div id="email-compose-view" class="hidden flex-1 flex flex-col overflow-hidden bg-slate-50/50 p-4 sm:p-6">
+                        <div class="bg-white rounded-2xl shadow-sm border border-pink-200/80 p-5 flex-1 flex flex-col max-w-3xl mx-auto w-full">
+                            <div class="flex justify-between items-center pb-3 border-b border-pink-100 mb-4">
+                                <h3 class="text-base font-bold text-pink-700 font-display flex items-center">
+                                    <i class="fas fa-pen-nib mr-2"></i> Escribir Mensaje
+                                </h3>
+                                <button type="button" onclick="showListView()" class="text-slate-400 hover:text-slate-600 text-xs">
+                                    <i class="fas fa-times text-base"></i>
+                                </button>
+                            </div>
+
+                            <form id="compose-form" class="flex-1 flex flex-col space-y-3">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Para:</label>
+                                    <div class="flex gap-2">
+                                        <input type="email" id="compose-to" required placeholder="mama@simucorreo.com o profesor@colegio.edu" class="w-full text-xs sm:text-sm px-3.5 py-2 border border-slate-200 rounded-xl focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500">
+                                        <select id="quick-contacts-select" onchange="applyQuickContact(this.value)" class="text-xs bg-pink-50 border border-pink-200 text-pink-800 rounded-xl px-2.5 focus:outline-none">
+                                            <option value="">Contactos Rápidos ▾</option>
+                                            <option value="mama@familia.segura">Mamá (mama@familia.segura)</option>
+                                            <option value="profesor.carlos@escuela.edu">Prof. Carlos (profesor.carlos@escuela.edu)</option>
+                                            <option value="mateo.amigo@simucorreo.com">Mateo (mateo.amigo@simucorreo.com)</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Asunto:</label>
+                                    <input type="text" id="compose-subject" required placeholder="¿De qué trata tu correo?" class="w-full text-xs sm:text-sm px-3.5 py-2 border border-slate-200 rounded-xl focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500">
+                                </div>
+
+                                <div class="flex-1 flex flex-col">
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Mensaje:</label>
+                                    <textarea id="compose-body" required placeholder="Escribe aquí de manera educada y clara..." class="w-full flex-1 p-3.5 text-xs sm:text-sm border border-slate-200 rounded-xl focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 resize-none"></textarea>
+                                </div>
+
+                                <div class="pt-2 flex justify-between items-center border-t border-slate-100">
+                                    <div class="text-[11px] text-slate-400">
+                                        🔒 Simulación escolar segura
+                                    </div>
+                                    <div class="space-x-2">
+                                        <button type="button" onclick="showListView()" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition">
+                                            Cancelar
+                                        </button>
+                                        <button type="submit" class="px-5 py-2 text-xs font-bold bg-pink-500 hover:bg-pink-600 text-white rounded-xl shadow-md transition flex items-center inline-flex">
+                                            <i class="fas fa-paper-plane mr-1.5"></i> Enviar Correo
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                </main>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ============================================== -->
+    <!-- SCRIPT PRINCIPAL CON TODA LA LÓGICA SIMULADA   -->
+    <!-- ============================================== -->
+    <script>
+        // ESTADO GLOBAL DE LA APLICACIÓN
+        let currentUser = null;
+        let currentFolder = 'inbox';
+        let emails = [];
+        let cyberScore = 100;
+        let threatsReportedCount = 0;
+        let mamaRepliesCount = 0;
+        let mamaDialogueStep = 0;
+        let activeReadingEmail = null;
+
+        // BASE DE DATOS INICIAL DE SITUACIONES DE LA VIDA REAL
+        const INITIAL_SCENARIOS = [
+            // 1. Mensaje de Mamá (Cotidiano, afectuoso, interactivo)
+            {
+                id: 'mama-keys',
+                folder: 'inbox',
+                fromName: 'Mamá ❤️',
+                fromEmail: 'mama@familia.segura',
+                avatarBg: 'bg-rose-500',
+                avatarText: 'M',
+                subject: '¿Has visto las llaves del coche? 🚗',
+                body: `¡Hola mi amor!<br><br>
+No encuentro las llaves del auto por ningún lado y tengo que salir a hacer las compras en un ratito. ¿Te acuerdas si las dejamos en la mesita de la entrada o en la cocina?<br><br>
+Por favor respóndeme apenas puedas. Te dejé una merienda rica en la nevera.<br><br>
+¡Te quiero mucho! 🥪`,
+                date: new Date(Date.now() - 1000 * 60 * 15), // Hace 15 minutos
+                read: false,
+                isTrusted: true,
+                isPhishing: false,
+                quickReplies: [
+                    "¡Hola mami! Las vi encima del mueble de la entrada.",
+                    "No las he visto mami, revisa en tu bolso.",
+                    "¡Gracias por la merienda! Te quiero."
+                ]
+            },
+
+            // 2. Mensaje del Colegio / Profesor (Responsabilidad escolar)
+            {
+                id: 'school-task',
+                folder: 'inbox',
+                fromName: 'Profesor Carlos (Ciencias)',
+                fromEmail: 'profesor.carlos@escuela.edu',
+                avatarBg: 'bg-blue-600',
+                avatarText: 'P',
+                subject: 'Recordatorio: Proyecto del Sistema Solar para el viernes 🪐',
+                body: `Estimado/a estudiante:<br><br>
+Les recuerdo que este viernes es la fecha límite para entregar la maqueta o informe del <strong>Sistema Solar</strong>.<br><br>
+Recuerden incluir los materiales reciclados y explicar un planeta favorito. Adjunto la guía en PDF para que puedan revisarla junto a sus padres.<br><br>
+Saludos cordiales,<br>
+<em>Profesor Carlos Mendoza - Área de Ciencias</em>`,
+                date: new Date(Date.now() - 1000 * 60 * 45),
+                read: false,
+                isTrusted: true,
+                isPhishing: false,
+                attachments: [
+                    { name: 'Guia_Proyecto_Sistema_Solar.pdf', size: '1.2 MB', safe: true, type: 'pdf' }
+                ],
+                quickReplies: [
+                    "Muchas gracias profesor, ya casi termino mi maqueta.",
+                    "Buenas tardes profesor, ¿la presentación es individual o en parejas?"
+                ]
+            },
+
+            // 3. Trampa de Videojuegos (Robux / Free Fire / Fortnite) - Muy común en niños
+            {
+                id: 'scam-robux',
+                folder: 'inbox',
+                fromName: 'Soporte Roblox Oficial (Falso)',
+                fromEmail: 'regalos@roblox-gratis-2026.xyz',
+                avatarBg: 'bg-amber-600',
+                avatarText: 'R',
+                subject: '🎁 ¡FELICIDADES! Ganaste 50.000 Robux y Pases Gratis 🎮',
+                body: `¡Hola gamer afortunado!<br><br>
+Has sido seleccionado entre millones de jugadores para recibir <strong>50.000 ROBUX GRATIS</strong>.<br><br>
+Para activarlos en tu cuenta inmediatamente, debes hacer clic aquí e ingresar tu usuario y contraseña de Roblox:<br><br>
+<a href="javascript:void(0)" onclick="triggerSecurityAlert('game_scam')" class="text-blue-600 underline font-semibold bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-200 inline-block hover:bg-blue-100">
+👉 https://reclamar-robux-gratis-ahora.xyz/login
+</a><br><br>
+⚠️ <em>Tienes solo 5 minutos antes de que el premio pase a otro jugador.</em>`,
+                date: new Date(Date.now() - 1000 * 60 * 60 * 2),
+                read: false,
+                isTrusted: false,
+                isPhishing: true,
+                phishingType: 'game_scam',
+                warningReason: 'Ofrece monedas de juegos gratis y te pide hacer clic urgente. Nadie regala monedas virtuales gratis pidiendo tu clave.',
+                lesson: '¡NUNCA pongas tu contraseña en páginas desconocidas! Ninguna empresa oficial de juegos te regalará Robux pidiéndote tu clave. Quieren robarte la cuenta.',
+                attachments: [
+                    { name: 'Generador_Robux_Gratis.exe', size: '4.8 MB', safe: false, type: 'exe' }
+                ]
+            },
+
+            // 4. Mensaje de Desconocido / Ciberacoso / Grooming
+            {
+                id: 'scam-stranger',
+                folder: 'inbox',
+                fromName: 'Alex_Gamer2013',
+                fromEmail: 'chico_misterioso99@correo-anonimo.net',
+                avatarBg: 'bg-purple-600',
+                avatarText: 'A',
+                subject: 'Hola, te vi en TikTok... ¿Cuántos años tienes? 😉',
+                body: `Hola, encontré tu nombre de usuario en un comentario de internet y me pareciste muy genial.<br><br>
+¿Dónde vives y a qué colegio vas? Dame tu número de WhatsApp para que hablemos en secreto y no le cuentes a tus papás.<br><br>
+Si quieres te paso fotos mías primero. Respóndeme pronto.`,
+                date: new Date(Date.now() - 1000 * 60 * 60 * 5),
+                read: false,
+                isTrusted: false,
+                isPhishing: true,
+                phishingType: 'stranger_danger',
+                warningReason: 'Un desconocido pidiendo datos privados (colegio, WhatsApp) y pidiendo que mantengas secretos con tus padres.',
+                lesson: '¡PELIGRO! Nunca hables con desconocidos en internet que te pidan guardar secretos a tus padres o te pidan fotos y tu número de teléfono. Cuéntale a un adulto de inmediato.'
+            },
+
+            // 5. SPAM: Notificación Falsa de Banco / Amazon / MercadoPago
+            {
+                id: 'spam-bank',
+                folder: 'spam',
+                fromName: 'Seguridad Bancaria Urgente',
+                fromEmail: 'notificaciones@banco-seguro-verificacion.com',
+                avatarBg: 'bg-red-600',
+                avatarText: 'B',
+                subject: '🚨 URGENTE: Bloqueo inmediato de tu cuenta bancaria',
+                body: `Estimado cliente:<br><br>
+Hemos detectado transacciones no autorizadas en su cuenta por $450 USD.<br><br>
+Para evitar el bloqueo definitivo en las próximas 2 horas, debe confirmar su número de tarjeta y clave aquí:<br><br>
+<a href="javascript:void(0)" onclick="triggerSecurityAlert('bank_urgency')" class="text-rose-600 underline font-semibold bg-rose-50 px-3 py-1.5 rounded-lg border border-rose-200 inline-block hover:bg-rose-100">
+Verificar cuenta y tarjeta ahora
+</a>`,
+                date: new Date(Date.now() - 1000 * 60 * 60 * 12),
+                read: false,
+                isTrusted: false,
+                isPhishing: true,
+                phishingType: 'bank_urgency',
+                warningReason: 'Intento de asustar con urgencia y dinero para pedir números de tarjeta.',
+                lesson: 'Los bancos y servicios nunca te piden contraseñas ni datos bancarios por correo con amenazas de urgencia.'
+            },
+
+            // 6. SPAM: Ganaste un viaje / iPhone
+            {
+                id: 'spam-iphone',
+                folder: 'spam',
+                fromName: 'Promociones Internacionales',
+                fromEmail: 'sorteos@iphone15-ganadores.club',
+                avatarBg: 'bg-amber-500',
+                avatarText: 'I',
+                subject: '📱 ¡Confirmación de envío de tu nuevo iPhone 16 Pro!',
+                body: `Felicidades, fuiste elegido por la lotería web.<br><br>
+Tu iPhone está listo para ser enviado a tu domicilio. Solo debes pagar $2 dólares por el envío ingresando los datos de la tarjeta de tus padres:<br><br>
+<a href="javascript:void(0)" onclick="triggerSecurityAlert('lottery_scam')" class="text-amber-700 underline font-semibold">
+Confirmar dirección de envío y pago
+</a>`,
+                date: new Date(Date.now() - 1000 * 60 * 60 * 24),
+                read: false,
+                isTrusted: false,
+                isPhishing: true,
+                phishingType: 'lottery_scam',
+                warningReason: 'Promesa de un teléfono caro que nadie regala.',
+                lesson: 'Nadie regala teléfonos en internet. Es un truco para pedir la tarjeta de crédito de tus padres.'
+            }
+        ];
+
+        // INICIALIZACIÓN
+        window.addEventListener('DOMContentLoaded', () => {
+            initBubbles();
+            setupEventListeners();
+        });
+
+        function setupEventListeners() {
+            // Cambio entre Crear Cuenta y Login
+            document.getElementById('go-to-login').addEventListener('click', () => {
+                document.getElementById('signup-form-container').classList.add('hidden');
+                document.getElementById('login-form-container').classList.remove('hidden');
+            });
+
+            document.getElementById('go-to-signup').addEventListener('click', () => {
+                document.getElementById('login-form-container').classList.add('hidden');
+                document.getElementById('signup-form-container').classList.remove('hidden');
+            });
+
+            // Envío formulario crear cuenta
+            document.getElementById('signup-form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                const firstName = document.getElementById('signup-firstname').value.trim();
+                const lastName = document.getElementById('signup-lastname').value.trim();
+                const prefix = document.getElementById('signup-simuemail-prefix').value.trim().toLowerCase();
+
+                currentUser = {
+                    firstName,
+                    lastName,
+                    email: `${prefix}@simucorreo.com`
+                };
+
+                startEmailExperience();
+            });
+
+            // Envío login
+            document.getElementById('login-form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                const email = document.getElementById('login-email').value.trim();
+                currentUser = {
+                    firstName: 'Estudiante',
+                    lastName: '',
+                    email: email
+                };
+                startEmailExperience();
+            });
+
+            // Navegación de carpetas
+            document.querySelectorAll('.sidebar-item').forEach(button => {
+                button.addEventListener('click', () => {
+                    const folder = button.getAttribute('data-folder');
+                    switchFolder(folder);
+                });
+            });
+
+            // Botón Redactar
+            document.getElementById('compose-btn').addEventListener('click', () => {
+                showComposeView();
+            });
+
+            // Volver de lectura a lista
+            document.getElementById('btn-back-to-list').addEventListener('click', () => {
+                showListView();
+            });
+
+            // Formulario de envío de nuevo correo
+            document.getElementById('compose-form').addEventListener('submit', handleSendEmail);
+
+            // Cerrar modal de seguridad
+            document.getElementById('close-security-modal').addEventListener('click', () => {
+                document.getElementById('security-modal').classList.add('hidden');
+            });
+
+            // Buscador en tiempo real
+            document.getElementById('search-input').addEventListener('input', (e) => {
+                const query = e.target.value.toLowerCase();
+                renderEmailList(query);
+            });
+        }
+
+        // INICIAR LA EXPERIENCIA DEL ESTUDIANTE
+        function startEmailExperience() {
+            // Copiar emails iniciales con personalización
+            emails = JSON.parse(JSON.stringify(INITIAL_SCENARIOS));
+            
+            // Adaptar fecha y nombre
+            emails.forEach(em => em.date = new Date(em.date));
+
+            document.getElementById('user-display-email').textContent = `${currentUser.firstName} (${currentUser.email})`;
+            document.getElementById('auth-section').classList.add('hidden');
+            document.getElementById('email-client-section').classList.remove('hidden');
+            
+            // Efecto de bienvenida con confetti
+            confetti({
+                particleCount: 70,
+                spread: 60,
+                origin: { y: 0.6 }
+            });
+
+            showToast(`¡Bienvenido/a, ${currentUser.firstName}! Tu correo está activo y seguro.`, 'success');
+
+            // Renderizar la carpeta Inbox
+            switchFolder('inbox');
+            updateBadgeCounters();
+            updateBrowserUrl('bandeja-de-entrada');
+
+            // Simular la llegada escalonada de un mensaje sorpresa después de unos segundos
+            setTimeout(() => {
+                simulateIncomingFriendEmail();
+            }, 8000);
+        }
+
+        // CAMBIO DE CARPETAS
+        function switchFolder(folder) {
+            currentFolder = folder;
+            
+            // Actualizar botones activos en sidebar
+            document.querySelectorAll('.sidebar-item').forEach(btn => {
+                if (btn.getAttribute('data-folder') === folder) {
+                    btn.setAttribute('data-active', 'true');
+                } else {
+                    btn.removeAttribute('data-active');
+                }
+            });
+
+            // Título y descripción de la carpeta
+            const titleEl = document.getElementById('current-folder-title');
+            const descEl = document.getElementById('current-folder-desc');
+            
+            if (folder === 'inbox') {
+                titleEl.innerHTML = `<i class="fas fa-inbox text-pink-500 mr-2"></i> Bandeja de Entrada`;
+                descEl.textContent = 'Mensajes importantes de tu familia, amigos y la escuela.';
+                updateBrowserUrl('inbox');
+            } else if (folder === 'spam') {
+                titleEl.innerHTML = `<i class="fas fa-radiation text-amber-500 mr-2"></i> Carpeta de Spam / No Deseado`;
+                descEl.textContent = 'Mensajes sospechosos detectados automáticamente por el sistema de seguridad.';
+                updateBrowserUrl('spam');
+            } else if (folder === 'sent') {
+                titleEl.innerHTML = `<i class="fas fa-paper-plane text-blue-500 mr-2"></i> Correos Enviados`;
+                descEl.textContent = 'Mensajes que tú has escrito y enviado a otros contactos.';
+                updateBrowserUrl('enviados');
+            } else if (folder === 'trash') {
+                titleEl.innerHTML = `<i class="fas fa-trash-can text-slate-400 mr-2"></i> Papelera de Reciclaje`;
+                descEl.textContent = 'Mensajes eliminados. Puedes vaciarla cuando desees.';
+                updateBrowserUrl('papelera');
+            }
+
+            showListView();
+            renderEmailList();
+        }
+
+        // RENDERIZAR LISTA DE CORREOS
+        function renderEmailList(filterText = '') {
+            const container = document.getElementById('emails-container');
+            container.innerHTML = '';
+
+            let list = emails.filter(em => em.folder === currentFolder);
+
+            if (filterText) {
+                list = list.filter(em => 
+                    em.subject.toLowerCase().includes(filterText) ||
+                    em.fromName.toLowerCase().includes(filterText) ||
+                    em.body.toLowerCase().includes(filterText)
+                );
+            }
+
+            // Ordenar: más recientes primero
+            list.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            if (list.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-16 px-4">
+                        <div class="w-16 h-16 bg-pink-50 text-pink-300 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl">
+                            <i class="fas fa-envelope-open"></i>
+                        </div>
+                        <h4 class="text-sm font-bold text-slate-600">No hay correos en esta carpeta</h4>
+                        <p class="text-xs text-slate-400 mt-1">Todo está limpio y al día.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            list.forEach(email => {
+                const item = document.createElement('div');
+                const isUnread = !email.read;
+                
+                item.className = `p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
+                    isUnread 
+                    ? 'unread-row shadow-sm hover:shadow-md border-pink-200' 
+                    : 'read-row hover:bg-pink-50/50 border-slate-200/60'
+                }`;
+
+                // Formatear hora/fecha
+                const timeStr = formatEmailDate(email.date);
+
+                item.innerHTML = `
+                    <div class="flex items-center space-x-3 overflow-hidden flex-1">
+                        <div class="w-9 h-9 rounded-full ${email.avatarBg || 'bg-slate-400'} text-white flex items-center justify-center font-bold text-xs flex-shrink-0 shadow-xs">
+                            ${email.avatarText || email.fromName.charAt(0)}
+                        </div>
+                        <div class="truncate flex-1">
+                            <div class="flex items-center space-x-2">
+                                <span class="text-xs ${isUnread ? 'font-bold text-slate-900' : 'font-semibold text-slate-700'} truncate">
+                                    ${email.fromName}
+                                </span>
+                                ${email.isTrusted ? '<span class="text-[10px] bg-emerald-100 text-emerald-800 px-1.5 py-0.2 rounded-full font-bold flex items-center"><i class="fas fa-check-circle mr-1 text-[9px]"></i> Seguro</span>' : ''}
+                                ${email.isPhishing ? '<span class="text-[10px] bg-rose-100 text-rose-700 px-1.5 py-0.2 rounded-full font-bold flex items-center"><i class="fas fa-triangle-exclamation mr-1 text-[9px]"></i> Cuidado</span>' : ''}
+                            </div>
+                            <div class="text-xs ${isUnread ? 'font-semibold text-slate-800' : 'text-slate-600'} truncate">
+                                ${email.subject}
+                            </div>
+                            <div class="text-[11px] text-slate-400 truncate">
+                                ${stripHtml(email.body).substring(0, 75)}...
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col items-end flex-shrink-0 space-y-1">
+                        <span class="text-[10px] ${isUnread ? 'font-bold text-pink-600' : 'text-slate-400'}">
+                            ${timeStr}
+                        </span>
+                        <div class="flex space-x-1">
+                            ${email.attachments ? '<i class="fas fa-paperclip text-slate-400 text-xs" title="Tiene archivo adjunto"></i>' : ''}
+                            ${isUnread ? '<span class="w-2 h-2 rounded-full bg-pink-500 inline-block"></span>' : ''}
+                        </div>
+                    </div>
+                `;
+
+                item.onclick = () => openEmail(email);
+                container.appendChild(item);
+            });
+
+            updateBadgeCounters();
+        }
+
+        // ABRIR Y LEER CORREO
+        function openEmail(email) {
+            email.read = true;
+            activeReadingEmail = email;
+
+            // Actualizar vista
+            document.getElementById('email-list-view').classList.add('hidden');
+            document.getElementById('email-compose-view').classList.add('hidden');
+            document.getElementById('email-read-view').classList.remove('hidden');
+
+            updateBrowserUrl(`mensaje/${email.id}`);
+
+            // Datos del remitente y cabecera
+            document.getElementById('read-subject').textContent = email.subject;
+            document.getElementById('read-sender-name').textContent = email.fromName;
+            document.getElementById('read-sender-email').textContent = email.fromEmail;
+            document.getElementById('read-date').textContent = formatEmailDate(email.date, true);
+            document.getElementById('read-body').innerHTML = email.body;
+
+            const avatar = document.getElementById('avatar-container');
+            avatar.className = `w-11 h-11 rounded-full flex items-center justify-center font-bold text-white shadow-sm flex-shrink-0 ${email.avatarBg || 'bg-slate-400'}`;
+            avatar.textContent = email.avatarText || email.fromName.charAt(0);
+
+            // Banners de seguridad
+            const securityBanner = document.getElementById('security-warning-banner');
+            const trustedBanner = document.getElementById('trusted-contact-banner');
+
+            if (email.isPhishing) {
+                securityBanner.classList.remove('hidden');
+                trustedBanner.classList.add('hidden');
+                document.getElementById('security-warning-text').textContent = email.warningReason;
+            } else if (email.isTrusted) {
+                securityBanner.classList.add('hidden');
+                trustedBanner.classList.remove('hidden');
+            } else {
+                securityBanner.classList.add('hidden');
+                trustedBanner.classList.add('hidden');
+            }
+
+            // Archivos adjuntos
+            const attachContainer = document.getElementById('read-attachments');
+            const attachList = document.getElementById('attachments-list');
+            if (email.attachments && email.attachments.length > 0) {
+                attachContainer.classList.remove('hidden');
+                attachList.innerHTML = '';
+                email.attachments.forEach(att => {
+                    const pill = document.createElement('div');
+                    pill.className = `flex items-center space-x-2 px-3 py-2 rounded-xl text-xs font-medium border cursor-pointer transition ${
+                        att.safe 
+                        ? 'bg-slate-50 border-slate-200 hover:bg-slate-100 text-slate-700' 
+                        : 'bg-rose-50 border-rose-300 hover:bg-rose-100 text-rose-800'
+                    }`;
+                    pill.innerHTML = `
+                        <i class="fas ${att.safe ? 'fa-file-pdf text-red-500' : 'fa-triangle-exclamation text-rose-600'} text-base"></i>
+                        <div>
+                            <div class="font-bold truncate max-w-xs">${att.name}</div>
+                            <div class="text-[10px] text-slate-400">${att.size}</div>
+                        </div>
+                    `;
+                    pill.onclick = () => {
+                        if (!att.safe) {
+                            triggerSecurityAlert('dangerous_file');
+                        } else {
+                            showToast(`Abriendo ${att.name} en visor escolar protegido.`, 'info');
+                        }
+                    };
+                    attachList.appendChild(pill);
+                });
+            } else {
+                attachContainer.classList.add('hidden');
+            }
+
+            // Respuestas rápidas (para Mamá o Profesor)
+            const quickBox = document.getElementById('quick-reply-box');
+            const quickOpts = document.getElementById('quick-reply-options');
+            if (email.quickReplies && email.quickReplies.length > 0) {
+                quickBox.classList.remove('hidden');
+                quickOpts.innerHTML = '';
+                email.quickReplies.forEach(qr => {
+                    const btn = document.createElement('button');
+                    btn.className = "text-xs px-3 py-1.5 bg-pink-100/70 hover:bg-pink-200 text-pink-800 rounded-full font-medium transition border border-pink-200";
+                    btn.textContent = `💬 ${qr}`;
+                    btn.onclick = () => sendQuickReply(qr, email);
+                    quickOpts.appendChild(btn);
+                });
+            } else {
+                quickBox.classList.add('hidden');
+            }
+
+            // Botones de acción superior
+            renderReadActions(email);
+            updateBadgeCounters();
+        }
+
+        // ACCIONES EN LA VISTA DE LECTURA (Reportar, Mover a Spam, Borrar, Responder)
+        function renderReadActions(email) {
+            const container = document.getElementById('read-view-actions');
+            container.innerHTML = '';
+
+            // Botón Responder
+            const replyBtn = document.createElement('button');
+            replyBtn.className = "text-xs font-semibold text-slate-700 hover:bg-slate-100 px-3 py-1.5 rounded-xl transition flex items-center";
+            replyBtn.innerHTML = '<i class="fas fa-reply mr-1.5 text-pink-500"></i> Responder';
+            replyBtn.onclick = () => openReplyComposer(email);
+            container.appendChild(replyBtn);
+
+            // Si es sospechoso o está en inbox, botón de REPORTAR SPAM
+            if (email.folder === 'inbox' && email.isPhishing) {
+                const reportBtn = document.createElement('button');
+                reportBtn.className = "text-xs font-bold text-rose-700 bg-rose-100 hover:bg-rose-200 px-3 py-1.5 rounded-xl transition flex items-center shadow-xs";
+                reportBtn.innerHTML = '<i class="fas fa-shield-virus mr-1.5"></i> Reportar Peligro (+30 pts)';
+                reportBtn.onclick = () => rewardReportThreat(email);
+                container.appendChild(reportBtn);
+            } else if (email.folder === 'inbox') {
+                const markSpamBtn = document.createElement('button');
+                markSpamBtn.className = "text-xs font-semibold text-amber-700 hover:bg-amber-100 px-2.5 py-1.5 rounded-xl transition flex items-center";
+                markSpamBtn.innerHTML = '<i class="fas fa-radiation mr-1"></i> Enviar a Spam';
+                markSpamBtn.onclick = () => moveToSpam(email);
+                container.appendChild(markSpamBtn);
+            }
+
+            // Botón Eliminar a Papelera
+            if (email.folder !== 'trash') {
+                const delBtn = document.createElement('button');
+                delBtn.className = "text-xs font-semibold text-slate-500 hover:text-rose-600 hover:bg-rose-50 px-2.5 py-1.5 rounded-xl transition flex items-center";
+                delBtn.innerHTML = '<i class="fas fa-trash-can mr-1"></i> Borrar';
+                delBtn.onclick = () => moveToTrash(email);
+                container.appendChild(delBtn);
+            }
+        }
+
+        // RECOMPENSA POR REPORTAR TRAMPA O SPAM (Gamificación educativa)
+        function rewardReportThreat(email) {
+            email.folder = 'spam';
+            cyberScore += 30;
+            threatsReportedCount++;
+
+            confetti({
+                particleCount: 50,
+                spread: 70,
+                origin: { y: 0.5 }
+            });
+
+            showToast("¡Excelente ojo de detective! Neutralizaste una amenaza y ganaste 30 puntos.", "success");
+            checkBadges();
+            updateScoreUI();
+            showListView();
+            renderEmailList();
+        }
+
+        function moveToSpam(email) {
+            email.folder = 'spam';
+            showToast("Mensaje movido a la carpeta de Spam.", "info");
+            showListView();
+            renderEmailList();
+        }
+
+        function moveToTrash(email) {
+            email.folder = 'trash';
+            showToast("Mensaje enviado a la Papelera.", "info");
+            showListView();
+            renderEmailList();
+        }
+
+        // DISPARAR ALERTA CUANDO EL ESTUDIANTE INTENTA CLIC EN UN ENLACE PELIGROSO
+        window.triggerSecurityAlert = function(type) {
+            cyberScore = Math.max(20, cyberScore - 15); // Pequeña penalización pedagógica
+            updateScoreUI();
+
+            const modal = document.getElementById('security-modal');
+            const title = document.getElementById('security-modal-title');
+            const text = document.getElementById('security-modal-text');
+            const lesson = document.getElementById('security-modal-lesson');
+
+            if (type === 'game_scam') {
+                title.textContent = '¡CUIDADO: TRAMPA DE ROBUX / JUEGOS!';
+                text.textContent = 'Hiciste clic en un enlace falso de videojuegos. En la vida real, los hackers usan este truco para robar la contraseña de tu cuenta y quitarte tus objetos y amigos.';
+                lesson.textContent = 'Recuerda: Ninguna empresa ni persona regala miles de monedas virtuales a cambio de tu contraseña. Si parece demasiado bueno para ser verdad, ¡es una trampa!';
+            } else if (type === 'stranger_danger') {
+                title.textContent = '¡ALTO AHÍ: DESCONOCIDO EN REDES!';
+                text.textContent = 'Nunca des tu teléfono, dirección ni fotos a desconocidos que te contacten por correo o juegos diciendo que te vieron en redes sociales.';
+                lesson.textContent = 'Regla vital: Si alguien en internet te dice "no le digas a tus papás", esa es la señal número 1 de peligro. Cuéntale a tus padres o a un profesor de inmediato.';
+            } else if (type === 'dangerous_file') {
+                title.textContent = '¡ARCHIVO .EXE MUY PELIGROSO!';
+                text.textContent = 'Los archivos con extensión .exe (ejecutables) enviados por correo electrónico casi siempre contienen VIRUS espía que pueden dañar tu computadora.';
+                lesson.textContent = 'Nunca abras archivos descargados de remitentes desconocidos sin que un adulto los revise primero con un antivirus.';
+            } else if (type === 'bank_urgency' || type === 'lottery_scam') {
+                title.textContent = '¡URGENCIA FALSA / PHISHING!';
+                text.textContent = 'Los delincuentes inventan que tu cuenta fue bloqueada o que ganaste un iPhone para que te asustes y des los datos de la tarjeta bancaria de tus padres.';
+                lesson.textContent = 'Nunca tomes decisiones asustado. Respira, no hagas clic, y muestra el correo a un adulto.';
+            }
+
+            modal.classList.remove('hidden');
+        };
+
+        // GESTIÓN DE RESPUESTA A MAMÁ (Simulación inteligente y realista de conversación)
+        function sendQuickReply(replyText, originalEmail) {
+            mamaRepliesCount++;
+            mamaDialogueStep++;
+
+            // Registrar en Enviados
+            const sentEmail = {
+                id: 'sent-' + Date.now(),
+                folder: 'sent',
+                fromName: currentUser.firstName,
+                fromEmail: currentUser.email,
+                avatarBg: 'bg-pink-600',
+                avatarText: currentUser.firstName.charAt(0),
+                subject: 'Re: ' + originalEmail.subject,
+                body: `${replyText}<br><br><em class="text-slate-400">--- Mensaje anterior ---<br>${originalEmail.body}</em>`,
+                date: new Date(),
+                read: true,
+                isTrusted: true,
+                isPhishing: false
+            };
+            emails.unshift(sentEmail);
+
+            showToast("Respuesta enviada a mamá.", "success");
+            showListView();
+            renderEmailList();
+            checkBadges();
+
+            // Mamá responde luego de 4 segundos
+            showToast("Mamá está escribiendo una respuesta...", "info");
+            setTimeout(() => {
+                let nextSubject = "Re: ¡Gracias cariño!";
+                let nextBody = "";
+                let nextQuickReplies = [];
+
+                if (mamaDialogueStep === 1) {
+                    nextSubject = "¡Ay menos mal! Ya las encontré 💖";
+                    nextBody = `¡Eres el/la mejor! Estaban justo ahí donde dijiste.<br><br>
+Oye, hoy quiero consentirte con la cena porque te estás portando muy juicioso/a. ¿Prefieres que hagamos <strong>pizza casera con queso</strong> o <strong>hamburguesas con papitas</strong>?<br><br>
+¡Respóndeme para comprar los ingredientes! Besitos.`;
+                    nextQuickReplies = [
+                        "¡Siii pizza casera por favor! 🍕",
+                        "¡Hamburguesas con papitas fritas! 🍔",
+                        "Lo que tú quieras preparar mami, gracias."
+                    ];
+                } else if (mamaDialogueStep === 2) {
+                    nextSubject = "¡Trato hecho! Nos vemos más tarde 🍕🍔";
+                    nextBody = `¡Listo mi amor! Ya compré todo en el supermercado.<br><br>
+Llego en una hora a la casa para preparar todo juntos. No olvides terminar las tareas de la escuela y desconectar el computador cuando termines.<br><br>
+¡Te amo con todo mi corazón! Un abrazote.`;
+                    nextQuickReplies = [
+                        "¡Te espero mami! Ya casi termino la tarea.",
+                        "¡Te quiero mucho!"
+                    ];
+                } else {
+                    nextSubject = "¡Hablamos en casa carinito!";
+                    nextBody = `Voy en camino a casa manejando. ¡Nos vemos en unos minutos! Cuídate mucho.`;
+                }
+
+                const mamaResponse = {
+                    id: 'mama-reply-' + Date.now(),
+                    folder: 'inbox',
+                    fromName: 'Mamá ❤️',
+                    fromEmail: 'mama@familia.segura',
+                    avatarBg: 'bg-rose-500',
+                    avatarText: 'M',
+                    subject: nextSubject,
+                    body: nextBody,
+                    date: new Date(),
+                    read: false,
+                    isTrusted: true,
+                    isPhishing: false,
+                    quickReplies: nextQuickReplies
+                };
+
+                emails.unshift(mamaResponse);
+                showToast("💌 ¡Tienes un nuevo mensaje de Mamá!", "success");
+                renderEmailList();
+                updateBadgeCounters();
+            }, 4500);
+        }
+
+        // REDACCIÓN Y ENVÍO DE CORREOS
+        function handleSendEmail(e) {
+            e.preventDefault();
+            const to = document.getElementById('compose-to').value.trim();
+            const subject = document.getElementById('compose-subject').value.trim();
+            const body = document.getElementById('compose-body').value.trim().replace(/\n/g, '<br>');
+
+            const newEmail = {
+                id: 'sent-' + Date.now(),
+                folder: 'sent',
+                fromName: currentUser.firstName,
+                fromEmail: currentUser.email,
+                avatarBg: 'bg-pink-600',
+                avatarText: currentUser.firstName.charAt(0),
+                subject: subject,
+                body: body,
+                date: new Date(),
+                read: true,
+                isTrusted: true,
+                isPhishing: false
+            };
+
+            emails.unshift(newEmail);
+            showToast("¡Correo enviado con éxito!", "success");
+            document.getElementById('compose-form').reset();
+            switchFolder('sent');
+
+            // Si el correo fue para mamá o el profesor, simular respuesta
+            if (to.includes('mama')) {
+                sendQuickReply(body, { subject, body });
+            } else if (to.includes('profesor')) {
+                setTimeout(() => {
+                    simulateTeacherReply(subject);
+                }, 5000);
+            }
+        }
+
+        function simulateTeacherReply(subject) {
+            const reply = {
+                id: 'profesor-reply-' + Date.now(),
+                folder: 'inbox',
+                fromName: 'Profesor Carlos (Ciencias)',
+                fromEmail: 'profesor.carlos@escuela.edu',
+                avatarBg: 'bg-blue-600',
+                avatarText: 'P',
+                subject: 'Re: ' + subject,
+                body: `Hola ${currentUser.firstName}:<br><br>
+Recibí tu mensaje con atención. Me alegra mucho tu compromiso y tu iniciativa de escribir por este medio formal.<br><br>
+Cualquier duda adicional la resolveremos con gusto en la próxima clase. ¡Sigue así!<br><br>
+Atentamente,<br>Prof. Carlos.`,
+                date: new Date(),
+                read: false,
+                isTrusted: true,
+                isPhishing: false
+            };
+            emails.unshift(reply);
+            showToast("📚 ¡El Profesor Carlos ha respondido a tu correo!", "info");
+            renderEmailList();
+            updateBadgeCounters();
+        }
+
+        // SIMULACIÓN DE AMIGO (Llegada automática)
+        function simulateIncomingFriendEmail() {
+            if (!currentUser) return;
+            const friendMail = {
+                id: 'amigo-mateo',
+                folder: 'inbox',
+                fromName: 'Mateo (Compañero de Clase)',
+                fromEmail: 'mateo.amigo@simucorreo.com',
+                avatarBg: 'bg-emerald-600',
+                avatarText: 'M',
+                subject: '🎮 ¿Jugamos un rato esta tarde después de la tarea?',
+                body: `¡Hola ${currentUser.firstName}!<br><br>
+¿Cómo vas con la tarea de Ciencias? Yo ya casi termino de leer el libro.<br><br>
+Mi mamá me deja jugar una hora a las 5:00 PM. ¿Te conectas y jugamos una partida juntos?<br><br>
+¡Avisame! 🚀`,
+                date: new Date(),
+                read: false,
+                isTrusted: true,
+                isPhishing: false,
+                quickReplies: [
+                    "¡De una! A las 5:00 PM me conecto después de terminar la tarea.",
+                    "Hoy no puedo porque salgo con mi mamá, pero mañana sí."
+                ]
+            };
+            emails.unshift(friendMail);
+            showToast(`📨 ¡Nuevo correo de tu amigo Mateo!`, "info");
+            renderEmailList();
+            updateBadgeCounters();
+        }
+
+        // PANEL DEL DOCENTE: INYECTAR CORREOS EN VIVO
+        window.toggleTeacherPanel = function() {
+            const panel = document.getElementById('teacher-panel');
+            panel.classList.toggle('hidden');
+        };
+
+        window.teacherInjectEmail = function(type) {
+            let newMail = null;
+            const now = new Date();
+
+            if (type === 'mama_tarea') {
+                newMail = {
+                    id: 'teacher-mama-' + Date.now(),
+                    folder: 'inbox',
+                    fromName: 'Mamá ❤️',
+                    fromEmail: 'mama@familia.segura',
+                    avatarBg: 'bg-rose-500',
+                    avatarText: 'M',
+                    subject: '¿Cómo vas con el proyecto de la escuela?',
+                    body: `Hola cariño, solo quería saber cómo vas con la maqueta del Sistema Solar.<br><br>
+¿Necesitas que compremos témperas o cartulina cuando salga del trabajo? Avísame con tiempo para pasar por la papelería.<br><br>
+¡Te amo!`,
+                    date: now,
+                    read: false,
+                    isTrusted: true,
+                    quickReplies: ["¡Hola mami! Me faltan témperas amarillas porfa.", "Todo listo mami, ya tengo todos los materiales."]
+                };
+            } else if (type === 'profesor') {
+                newMail = {
+                    id: 'teacher-prof-' + Date.now(),
+                    folder: 'inbox',
+                    fromName: 'Profesora Laura (Matemáticas)',
+                    fromEmail: 'laura.mate@escuela.edu',
+                    avatarBg: 'bg-indigo-600',
+                    avatarText: 'L',
+                    subject: 'Ejercicios de repaso para el examen del martes 📐',
+                    body: `Buenos días estimados estudiantes:<br><br>
+Les adjunto 5 ejercicios divertidos de repaso para que practiquen las multiplicaciones y divisiones antes del examen.<br><br>
+Saludos y feliz tarde.`,
+                    date: now,
+                    read: false,
+                    isTrusted: true,
+                    attachments: [{ name: 'Ejercicios_Multiplicacion.pdf', size: '540 KB', safe: true, type: 'pdf' }]
+                };
+            } else if (type === 'robux') {
+                newMail = {
+                    id: 'teacher-scam-robux-' + Date.now(),
+                    folder: 'inbox',
+                    fromName: 'Promociones Free Fire / Fortnite',
+                    fromEmail: 'diamantes-gratis@sorteos-locos.xyz',
+                    avatarBg: 'bg-amber-600',
+                    avatarText: 'D',
+                    subject: '💎 ¡10.000 DIAMANTES GRATIS PARA TU CUENTA!',
+                    body: `¡Felicidades crack!<br><br>
+Ingresa ya a este enlace y pon tu correo y clave para reclamar tus skins y diamantes legendarios:<br><br>
+<a href="javascript:void(0)" onclick="triggerSecurityAlert('game_scam')" class="text-rose-600 font-bold underline">https://diamantes-gratis-skins.xyz/reclamar</a>`,
+                    date: now,
+                    read: false,
+                    isPhishing: true,
+                    warningReason: 'Estafa de diamantes falsos para robar cuentas de videojuegos.'
+                };
+            } else if (type === 'desconocido') {
+                newMail = {
+                    id: 'teacher-stranger-' + Date.now(),
+                    folder: 'inbox',
+                    fromName: 'Desconocido de TikTok',
+                    fromEmail: 'amigo_secreto@anonimo.com',
+                    avatarBg: 'bg-purple-600',
+                    avatarText: '?',
+                    subject: 'Hola, dame tu número de WhatsApp y seamos amigos en privado',
+                    body: `Hola, vi tus videos y te quiero hacer un regalo en persona. ¿Dónde queda tu casa y en qué grado estás? No le cuentes a tus papás que te escribí.`,
+                    date: now,
+                    read: false,
+                    isPhishing: true,
+                    warningReason: 'Contacto peligroso pidiendo guardar secretos y datos privados.'
+                };
+            } else if (type === 'phishing_banco') {
+                newMail = {
+                    id: 'teacher-bank-' + Date.now(),
+                    folder: 'inbox',
+                    fromName: 'Soporte Netflix / Spotify Falso',
+                    fromEmail: 'renovacion@pagos-urgentes-cuentas.net',
+                    avatarBg: 'bg-red-600',
+                    avatarText: 'N',
+                    subject: '⚠️ Tu suscripción familiar se cancelará hoy por falta de pago',
+                    body: `Aviso urgente: No pudimos cobrar la mensualidad. Ingrese la tarjeta de sus padres inmediatamente o perderá el servicio hoy.<br><br>
+<a href="javascript:void(0)" onclick="triggerSecurityAlert('bank_urgency')" class="text-rose-600 font-bold underline">Actualizar tarjeta aquí</a>`,
+                    date: now,
+                    read: false,
+                    isPhishing: true,
+                    warningReason: 'Presión y urgencia falsa pidiendo datos financieros.'
+                };
+            } else if (type === 'amigo_fiesta') {
+                newMail = {
+                    id: 'teacher-party-' + Date.now(),
+                    folder: 'inbox',
+                    fromName: 'Camila (Cumpleaños)',
+                    fromEmail: 'camila.amiga@simucorreo.com',
+                    avatarBg: 'bg-pink-600',
+                    avatarText: 'C',
+                    subject: '🎂 ¡Estás invitado a mi fiesta de cumpleaños este sábado!',
+                    body: `¡Hola ${currentUser ? currentUser.firstName : 'amigo'}!<br><br>
+Este sábado celebro mis 11 años en el parque de trampolines a las 3:00 PM. ¡Va a haber pastel, juegos y pizza!<br><br>
+Pregúntale a tus papás si te dan permiso y me avisas para apartar tu cupo.<br><br>
+¡Ojalá puedas venir! 🎉`,
+                    date: now,
+                    read: false,
+                    isTrusted: true,
+                    quickReplies: ["¡Muchas felicidades Camila! Le pregunto a mis papás hoy.", "¡Siii cuenta conmigo, allá estaré!"]
+                };
+            }
+
+            if (newMail) {
+                emails.unshift(newMail);
+                showToast(`📧 El Docente envió: "${newMail.subject}"`, "info");
+                renderEmailList();
+                updateBadgeCounters();
+            }
+        };
+
+        // AYUDAS DE UI Y NAVEGACIÓN
+        function showListView() {
+            document.getElementById('email-list-view').classList.remove('hidden');
+            document.getElementById('email-read-view').classList.add('hidden');
+            document.getElementById('email-compose-view').classList.add('hidden');
+            updateBrowserUrl(currentFolder);
+        }
+
+        function showComposeView() {
+            document.getElementById('email-list-view').classList.add('hidden');
+            document.getElementById('email-read-view').classList.add('hidden');
+            document.getElementById('email-compose-view').classList.remove('hidden');
+            updateBrowserUrl('redactar');
+        }
+
+        function openReplyComposer(email) {
+            showComposeView();
+            document.getElementById('compose-to').value = email.fromEmail;
+            document.getElementById('compose-subject').value = email.subject.startsWith('Re:') ? email.subject : `Re: ${email.subject}`;
+            document.getElementById('compose-body').value = `\n\n--- Mensaje original de ${email.fromName} ---\n${stripHtml(email.body)}`;
+            document.getElementById('compose-body').focus();
+            document.getElementById('compose-body').setSelectionRange(0, 0);
+        }
+
+        function applyQuickContact(val) {
+            if (val) {
+                document.getElementById('compose-to').value = val;
+            }
+        }
+
+        function markAllAsRead() {
+            emails.filter(e => e.folder === currentFolder).forEach(e => e.read = true);
+            renderEmailList();
+            updateBadgeCounters();
+            showToast("Todos los correos marcados como leídos.", "info");
+        }
+
+        function updateBadgeCounters() {
+            const inboxUnread = emails.filter(e => e.folder === 'inbox' && !e.read).length;
+            const spamUnread = emails.filter(e => e.folder === 'spam' && !e.read).length;
+            const sentCount = emails.filter(e => e.folder === 'sent').length;
+            const trashCount = emails.filter(e => e.folder === 'trash').length;
+
+            const inboxEl = document.getElementById('inbox-count');
+            const spamEl = document.getElementById('spam-count');
+            const sentEl = document.getElementById('sent-count');
+            const trashEl = document.getElementById('trash-count');
+
+            inboxEl.textContent = inboxUnread;
+            inboxEl.style.display = inboxUnread > 0 ? 'inline-block' : 'none';
+
+            spamEl.textContent = spamUnread;
+            spamEl.style.display = spamUnread > 0 ? 'inline-block' : 'none';
+
+            sentEl.textContent = sentCount;
+            trashEl.textContent = trashCount;
+        }
+
+        function updateScoreUI() {
+            document.getElementById('cyber-score-text').textContent = cyberScore;
+            document.getElementById('modal-score-display').textContent = `${cyberScore} pts`;
+            document.getElementById('modal-threats-reported').textContent = threatsReportedCount;
+            document.getElementById('modal-mama-replies').textContent = mamaRepliesCount;
+        }
+
+        function checkBadges() {
+            if (threatsReportedCount >= 1) {
+                const b = document.getElementById('badge-spam-hunter');
+                if (b) b.classList.remove('opacity-40');
+            }
+            if (mamaRepliesCount >= 1) {
+                const b = document.getElementById('badge-family-hero');
+                if (b) b.classList.remove('opacity-40');
+            }
+        }
+
+        window.openCyberShieldModal = function() {
+            updateScoreUI();
+            document.getElementById('shield-modal').classList.remove('hidden');
+        };
+
+        function updateBrowserUrl(path) {
+            const bar = document.getElementById('fake-address-bar');
+            if (bar) {
+                bar.textContent = `simucorreo.educacion.segura/${path}`;
+            }
+        }
+
+        window.goHomeView = function() {
+            if (currentUser) {
+                switchFolder('inbox');
+            }
+        };
+
+        window.refreshMailbox = function() {
+            const icon = document.getElementById('refresh-icon');
+            icon.classList.add('fa-spin');
+            setTimeout(() => {
+                icon.classList.remove('fa-spin');
+                renderEmailList();
+                showToast("Bandeja actualizada.", "info");
+            }, 600);
+        };
+
+        window.simulateWindowAction = function(action) {
+            showToast(`Botón "${action}" simulado (Entorno educativo).`, 'info');
+        };
+
+        window.togglePasswordVisibility = function(id) {
+            const input = document.getElementById(id);
+            const eye = document.getElementById(`${id}-eye`);
+            if (input.type === 'password') {
+                input.type = 'text';
+                eye.classList.remove('fa-eye');
+                eye.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                eye.classList.remove('fa-eye-slash');
+                eye.classList.add('fa-eye');
+            }
+        };
+
+        window.logout = function() {
+            currentUser = null;
+            document.getElementById('email-client-section').classList.add('hidden');
+            document.getElementById('auth-section').classList.remove('hidden');
+            document.getElementById('signup-form-container').classList.remove('hidden');
+            document.getElementById('login-form-container').classList.add('hidden');
+            showToast("Sesión cerrada. ¡Vuelve pronto!", "info");
+        };
+
+        // NOTIFICACIONES TOAST FLOTANTES
+        function showToast(message, type = 'info') {
+            const area = document.getElementById('notification-area');
+            const toast = document.createElement('div');
+            
+            let bg = 'bg-slate-800';
+            let icon = 'fa-info-circle text-pink-400';
+
+            if (type === 'success') {
+                bg = 'bg-emerald-600';
+                icon = 'fa-circle-check text-white';
+            } else if (type === 'warning') {
+                bg = 'bg-amber-600';
+                icon = 'fa-triangle-exclamation text-white';
+            } else if (type === 'error') {
+                bg = 'bg-rose-600';
+                icon = 'fa-shield-halved text-white';
+            }
+
+            toast.className = `${bg} text-white text-xs px-4 py-3 rounded-2xl shadow-xl flex items-center space-x-2.5 transform transition-all duration-300 translate-y-2 opacity-0 pointer-events-auto border border-white/10`;
+            toast.innerHTML = `<i class="fas ${icon} text-sm"></i> <span class="font-medium">${message}</span>`;
+
+            area.appendChild(toast);
+
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            });
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', '-translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 3800);
+        }
+
+        // CREACIÓN DE BURBUJAS DECORATIVAS
+        function initBubbles() {
+            const container = document.getElementById('bubbles-container');
+            if (!container) return;
+            for (let i = 0; i < 18; i++) {
+                const b = document.createElement('div');
+                b.className = 'bubble';
+                const size = Math.random() * 45 + 15;
+                b.style.width = size + 'px';
+                b.style.height = size + 'px';
+                b.style.left = Math.random() * 100 + '%';
+                b.style.animationDuration = (Math.random() * 12 + 10) + 's';
+                b.style.animationDelay = (Math.random() * 5) + 's';
+                container.appendChild(b);
+            }
+        }
+
+        // UTILIDADES
+        function stripHtml(html) {
+            const tmp = document.createElement('div');
+            tmp.innerHTML = html;
+            return tmp.textContent || tmp.innerText || '';
+        }
+
+        function formatEmailDate(dateObj, full = false) {
+            const d = new Date(dateObj);
+            if (full) {
+                return d.toLocaleDateString([], { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+            }
+            const now = new Date();
+            const isToday = d.toDateString() === now.toDateString();
+            if (isToday) {
+                return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            }
+            return d.toLocaleDateString([], { day: '2-digit', month: 'short' });
+        }
+    </script>
+</body>
+</html>
